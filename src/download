@@ -1,0 +1,70 @@
+package db;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class StudentDAO {
+
+    public static List<Object[]> findAll() throws Exception {
+        List<Object[]> rows = new ArrayList<>();
+        String sql = "SELECT student_id, first_name, last_name, birth_date, gender, phone, email, address FROM Student ORDER BY student_id";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                rows.add(new Object[]{
+                        rs.getInt("student_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getDate("birth_date"),
+                        rs.getString("gender"),
+                        rs.getString("phone"),
+                        rs.getString("email"),
+                        rs.getString("address")
+                });
+            }
+        }
+        return rows;
+    }
+
+    public static void insert(String first, String last, Date birth, String gender, String phone, String email, String address) throws Exception {
+        String sql = "INSERT INTO Student(first_name,last_name,birth_date,gender,phone,email,address) VALUES(?,?,?,?,?,?,?)";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, first);
+            ps.setString(2, last);
+            ps.setDate(3, birth);
+            ps.setString(4, gender);
+            ps.setString(5, phone);
+            ps.setString(6, email);
+            ps.setString(7, address);
+            ps.executeUpdate();
+        }
+    }
+
+    public static void update(int id, String first, String last, Date birth, String gender, String phone, String email, String address) throws Exception {
+        String sql = "UPDATE Student SET first_name=?, last_name=?, birth_date=?, gender=?, phone=?, email=?, address=? WHERE student_id=?";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, first);
+            ps.setString(2, last);
+            ps.setDate(3, birth);
+            ps.setString(4, gender);
+            ps.setString(5, phone);
+            ps.setString(6, email);
+            ps.setString(7, address);
+            ps.setInt(8, id);
+            ps.executeUpdate();
+        }
+    }
+
+    public static void delete(int id) throws Exception {
+        String sql = "DELETE FROM Student WHERE student_id=?";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        }
+    }
+}

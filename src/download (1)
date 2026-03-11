@@ -1,0 +1,170 @@
+package ui;
+
+import db.DBConnection;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+
+public class ReportFrame extends JFrame {
+
+    private JTable table;
+    private JTextField txtStudentId;
+
+    public ReportFrame() {
+        setTitle("Reports");
+        setSize(800, 480);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+
+        table.setFillsViewportHeight(true);
+        table.setShowVerticalLines(false);
+        table.setRowHeight(28);
+
+        JButton btnTopStudent = new JButton("Top Student");
+        JButton btnStudentGrades = new JButton("Student Grades");
+        JButton btnStudents = new JButton("Students");
+        JButton btnHighestFinal = new JButton("Highest Final");
+        JButton btnMostAbsent = new JButton("Most Absent");
+
+        txtStudentId = new JTextField(10);
+
+        // Tooltips
+        btnTopStudent.setToolTipText("Calls stored procedure: GetTopStudent()");
+        btnStudentGrades.setToolTipText("Calls stored procedure: GetStudentGrades(student_id)");
+        btnHighestFinal.setToolTipText("Calls stored procedure: GetHighestFinal()");
+        btnMostAbsent.setToolTipText("Calls stored procedure: GetMostAbsentStudent()");
+        btnStudents.setToolTipText("Open Student Management screen");
+
+        topPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        topPanel.add(new JLabel("Student ID:"));
+        topPanel.add(txtStudentId);
+        topPanel.add(btnStudentGrades);
+        topPanel.add(btnTopStudent);
+        topPanel.add(btnHighestFinal);
+        topPanel.add(btnMostAbsent);
+        topPanel.add(btnStudents);
+
+        table = new JTable();
+        add(topPanel, BorderLayout.NORTH);
+        add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Actions
+        btnTopStudent.addActionListener(e -> loadTopStudent());
+        btnStudentGrades.addActionListener(e -> loadStudentGrades());
+        btnHighestFinal.addActionListener(e -> loadHighestFinal());
+        btnMostAbsent.addActionListener(e -> loadMostAbsent());
+        btnStudents.addActionListener(e -> new StudentFrame().setVisible(true));
+    }
+
+    private void loadTopStudent() {
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"ID", "First Name", "Last Name", "Average"}, 0
+        );
+
+        try (Connection conn = DBConnection.getConnection();
+             CallableStatement cs = conn.prepareCall("{CALL GetTopStudent()}");
+             ResultSet rs = cs.executeQuery()) {
+
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                        rs.getInt("student_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getDouble("average_score")
+                });
+            }
+            table.setModel(model);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+
+    private void loadStudentGrades() {
+        int studentId;
+        try {
+            studentId = Integer.parseInt(txtStudentId.getText().trim());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Student ID must be a number");
+            return;
+        }
+
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"Exam", "Score"}, 0
+        );
+
+        try (Connection conn = DBConnection.getConnection();
+             CallableStatement cs = conn.prepareCall("{CALL GetStudentGrades(?)}")) {
+
+            cs.setInt(1, studentId);
+
+            try (ResultSet rs = cs.executeQuery()) {
+                while (rs.next()) {
+                    model.addRow(new Object[]{
+                            rs.getString("exam_type"),
+                            rs.getDouble("score")
+                    });
+                }
+            }
+            table.setModel(model);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+
+    private void loadHighestFinal() {
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"student_id", "first_name", "last_name", "score"}, 0
+        );
+
+        try (Connection conn = DBConnection.getConnection();
+             CallableStatement cs = conn.prepareCall("{CALL GetHighestFinal()}");
+             ResultSet rs = cs.executeQuery()) {
+
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                        rs.getInt("student_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getDouble("score")
+                });
+            }
+            table.setModel(model);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+
+    private void loadMostAbsent() {
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"student_id", "first_name", "last_name", "absent_count"}, 0
+        );
+
+        try (Connection conn = DBConnection.getConnection();
+             CallableStatement cs = conn.prepareCall("{CALL GetMostAbsentStudent()}");
+             ResultSet rs = cs.executeQuery()) {
+
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                        rs.getInt("student_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getInt("absent_count")
+                });
+            }
+            table.setModel(model);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+}
