@@ -144,7 +144,6 @@ A full CRUD interface for managing courses.
 The screen includes a table view for existing records and a form panel for
 adding, updating, and deleting courses.
 
-![Courses Management](courses.png)
 
 ---
 
